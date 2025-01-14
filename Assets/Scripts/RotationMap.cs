@@ -4,15 +4,18 @@ using UnityEngine;
 
 public class RotationMap : MonoBehaviour
 {
-    [SerializeField] private float rotationSpeed = 180f; // Degrees per second
-    [SerializeField] private float targetRotation = 90f; // Rotation amount in degrees
-    [SerializeField] private Transform rotationTarget; // Reference to the target object to rotate around
+    // Degrees per second
+    [SerializeField] private float rotationSpeed = 180f;
+    // Rotation amount in degrees
+    [SerializeField] private float targetRotation = 90f;
+    // Reference to the target object to rotate around
+    [SerializeField] private Transform rotationTarget; 
 
-    private bool isRotating = false;
-    private float currentRotation = 0f;
-    private Vector3 rotationCenter;
-    private Quaternion startRotation;
-    private Quaternion endRotation;
+    private bool isRotating = false; //Tracks if rotation is in progress
+    private float currentRotation = 0f; //Tracks current rotation in progress
+    private Vector3 rotationCenter; //Point which rotation occurs
+    private Quaternion startRotation; //Initial and final rotation state
+    private Quaternion endRotation; //Initial and final object positions
     private Vector3 startPosition;
     private Vector3 endPosition;
 

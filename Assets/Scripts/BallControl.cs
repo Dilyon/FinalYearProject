@@ -18,7 +18,8 @@ public class BallControl : MonoBehaviour
     public GameObject gameOverPanel;
     public TMP_Text gameOverTextTMP;
     public Text gameOverTextLegacy;
-    public Button restartButton; // Add reference to restart button
+    public Button restartButton;
+    private LevelCompletionHandler completionHandler;
 
     private bool isGameOver = false;
 
@@ -27,13 +28,9 @@ public class BallControl : MonoBehaviour
         Debug.Log("Game Started");
         rb = GetComponent<Rigidbody>();
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-
         currentTime = timeLimit;
-
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
-
-        // Add listener to restart button if assigned
         if (restartButton != null)
         {
             restartButton.onClick.AddListener(RestartGame);
@@ -42,6 +39,35 @@ public class BallControl : MonoBehaviour
         else
         {
             Debug.LogWarning("Restart button not assigned in inspector!");
+        }
+
+        completionHandler = FindObjectOfType<LevelCompletionHandler>();
+        if (completionHandler == null)
+        {
+            Debug.LogWarning("LevelCompletionHandler not found in scene!");
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        Debug.Log("Trigger Enter:" + other.gameObject.tag);
+        if (other.gameObject.CompareTag("FinishZone"))
+        {
+            if (!isGameOver)
+            {
+                if (completionHandler != null)
+                {
+                    completionHandler.CompleteLevel();
+                }
+                else
+                {
+                    Debug.LogError("Cannot complete level - LevelCompletionHandler not found!");
+                    ShowGameOverScreen("You Win!\nTime Remaining: " + Mathf.Ceil(currentTime).ToString());
+                }
+            }
+            rb.isKinematic = true;
+            transform.position = respawnPoint.position;
+            rb.isKinematic = false;
         }
     }
 
@@ -73,21 +99,6 @@ public class BallControl : MonoBehaviour
             gameOverTextTMP.text = message;
         else if (gameOverTextLegacy != null)
             gameOverTextLegacy.text = message;
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        Debug.Log("Trigger Enter:" + other.gameObject.tag);
-        if (other.gameObject.tag == "FinishZone")
-        {
-            if (!isGameOver)
-            {
-                ShowGameOverScreen("You Win!\nTime Remaining: " + Mathf.Ceil(currentTime).ToString());
-            }
-            rb.isKinematic = true;
-            transform.position = respawnPoint.position;
-            rb.isKinematic = false;
-        }
     }
 
     void GameOver()

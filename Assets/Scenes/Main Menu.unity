@@ -381,7 +381,7 @@ MonoBehaviour:
   tutorialButton: {fileID: 592107472}
   hoverScaleMultiplier: 1.1
   animationSpeed: 8
-  gameSceneName: Level 1
+  gameSceneName: Level Options
   tutorialSceneName: Level 2
 --- !u!4 &204008181
 Transform:

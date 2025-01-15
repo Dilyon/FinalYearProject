@@ -94,7 +94,7 @@ public class BallControl : MonoBehaviour
     {
         Debug.Log("Game Over triggered");
         isGameOver = true;
-        ShowGameOverScreen("Time's Up!\nWould you like to try again?");
+        ShowGameOverScreen("Time's Up! You lost!");
     }
 
     void ShowGameOverScreen(string message)

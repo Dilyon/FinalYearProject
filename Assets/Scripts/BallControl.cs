@@ -45,16 +45,7 @@ public class BallControl : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        Debug.Log("Trigger Enter:" + other.gameObject.tag);
-        if (other.gameObject.CompareTag("FinishZone") && !isGameOver)
-        {
-            isGameOver = true;
-            // Start the level transition
-            StartCoroutine(LoadNextLevel());
-        }
-    }
+
 
     IEnumerator LoadNextLevel()
     {

@@ -382,7 +382,7 @@ MonoBehaviour:
   hoverScaleMultiplier: 1.1
   animationSpeed: 8
   gameSceneName: Level Options
-  tutorialSceneName: Level 2
+  tutorialSceneName: Tutorial
 --- !u!4 &204008181
 Transform:
   m_ObjectHideFlags: 0

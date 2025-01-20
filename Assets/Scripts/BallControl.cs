@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.UI;
 
@@ -19,9 +20,11 @@ public class BallControl : MonoBehaviour
     public TMP_Text gameOverTextTMP;
     public Text gameOverTextLegacy;
     public Button restartButton;
-    private LevelCompletionHandler completionHandler;
 
     private bool isGameOver = false;
+
+    // Add fade effect duration for smooth transition
+    public float fadeTime = 1.0f;
 
     void Start()
     {
@@ -40,34 +43,41 @@ public class BallControl : MonoBehaviour
         {
             Debug.LogWarning("Restart button not assigned in inspector!");
         }
-
-        completionHandler = FindObjectOfType<LevelCompletionHandler>();
-        if (completionHandler == null)
-        {
-            Debug.LogWarning("LevelCompletionHandler not found in scene!");
-        }
     }
 
     private void OnTriggerEnter(Collider other)
     {
         Debug.Log("Trigger Enter:" + other.gameObject.tag);
-        if (other.gameObject.CompareTag("FinishZone"))
+        if (other.gameObject.CompareTag("FinishZone") && !isGameOver)
         {
-            if (!isGameOver)
-            {
-                if (completionHandler != null)
-                {
-                    completionHandler.CompleteLevel();
-                }
-                else
-                {
-                    Debug.LogError("Cannot complete level - LevelCompletionHandler not found!");
-                    ShowGameOverScreen("You Win!\nTime Remaining: " + Mathf.Ceil(currentTime).ToString());
-                }
-            }
-            rb.isKinematic = true;
-            transform.position = respawnPoint.position;
-            rb.isKinematic = false;
+            isGameOver = true;
+            // Start the level transition
+            StartCoroutine(LoadNextLevel());
+        }
+    }
+
+    IEnumerator LoadNextLevel()
+    {
+        // Freeze the ball's movement
+        rb.isKinematic = true;
+
+        // Optional: Add a fade effect or transition animation here
+        // Wait for fadeTime seconds
+        yield return new WaitForSeconds(fadeTime);
+
+        // Get the current scene index
+        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
+
+        // Check if there's a next level
+        if (currentSceneIndex + 1 < SceneManager.sceneCountInBuildSettings)
+        {
+            // Load the next level
+            SceneManager.LoadScene(currentSceneIndex + 1);
+        }
+        else
+        {
+            // If this is the last level, show game completion screen
+            ShowGameOverScreen("Congratulations!\nYou've completed all levels!");
         }
     }
 
@@ -125,24 +135,7 @@ public class BallControl : MonoBehaviour
     public void RestartGame()
     {
         Debug.Log("RestartGame function called");
-        currentTime = timeLimit;
-        isGameOver = false;
-
-        rb.isKinematic = true;
-        transform.position = respawnPoint.position;
-        rb.isKinematic = false;
-
-        if (gameOverPanel != null)
-        {
-            gameOverPanel.SetActive(false);
-            Debug.Log("Game Over Panel hidden");
-        }
-        else
-        {
-            Debug.LogWarning("Game Over Panel is not assigned!");
-        }
-
-        UpdateTimerDisplay(timeLimit.ToString());
-        Debug.Log("Game restarted successfully");
+        // Reload the current scene
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }

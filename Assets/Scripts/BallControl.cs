@@ -20,6 +20,7 @@ public class BallControl : MonoBehaviour
     public TMP_Text gameOverTextTMP;
     public Text gameOverTextLegacy;
     public Button restartButton;
+    private HealthBarSystem healthSystem;
 
     private bool isGameOver = false;
 
@@ -32,6 +33,19 @@ public class BallControl : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         currentTime = timeLimit;
+
+        // Get the HealthBarSystem component
+        healthSystem = GetComponent<HealthBarSystem>();
+        if (healthSystem != null)
+        {
+            // Subscribe to the health depleted event
+            healthSystem.onHealthDepleted.AddListener(OnHealthDepleted);
+        }
+        else
+        {
+            Debug.LogWarning("HealthBarSystem not found on the player!");
+        }
+
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
         if (restartButton != null)
@@ -128,5 +142,20 @@ public class BallControl : MonoBehaviour
         Debug.Log("RestartGame function called");
         // Reload the current scene
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    private void OnHealthDepleted()
+    {
+        Debug.Log("Health depleted - Game Over");
+        isGameOver = true;
+        ShowGameOverScreen("Health Depleted!");
+    }
+
+    private void OnDestroy()
+    {
+        if (healthSystem != null)
+        {
+            healthSystem.onHealthDepleted.RemoveListener(OnHealthDepleted);
+        }
     }
 }

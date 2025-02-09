@@ -38,7 +38,7 @@ public class FinishPoint : MonoBehaviour
     }
     void Reset()
     {
-        PlayerPrefs.SetInt("UnlockedLevel", 5);  // Or whatever number you want
+        PlayerPrefs.SetInt("UnlockedLevel", 15);  // Or whatever number you want
         PlayerPrefs.Save();
     }
 }

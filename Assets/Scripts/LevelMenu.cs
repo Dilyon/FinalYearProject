@@ -14,7 +14,12 @@ public class LevelMenu : MonoBehaviour
         Debug.Log($"UnlockedLevel: {unlockedLevel}");
         Debug.Log($"Total buttons: {buttons.Length}");
 
-        // First disable all buttons
+        SetupButtons(unlockedLevel);
+    }
+
+    private void SetupButtons(int unlockedLevel)
+    {
+        // First disable all buttons and set up listeners
         for (int i = 0; i < buttons.Length; i++)
         {
             if (buttons[i] == null)
@@ -24,22 +29,17 @@ public class LevelMenu : MonoBehaviour
             }
 
             buttons[i].interactable = false;
-
-            // Remove any existing listeners to prevent duplicates
             buttons[i].onClick.RemoveAllListeners();
 
-            // Add new listener with correct level number (i + 1)
-            int levelNumber = i + 1; // Convert from 0-based to 1-based
+            int levelNumber = i + 1;
             buttons[i].onClick.AddListener(() => {
                 Debug.Log($"Clicked button index {i} for Level {levelNumber}");
                 OpenLevel(levelNumber);
             });
-
-            Debug.Log($"Set up button {i} to load Level {levelNumber}");
         }
 
         // Enable buttons up to unlocked level
-        for (int i = 0; i < unlockedLevel; i++)
+        for (int i = 0; i < unlockedLevel && i < buttons.Length; i++)
         {
             if (buttons[i] != null)
             {
@@ -49,12 +49,32 @@ public class LevelMenu : MonoBehaviour
         }
     }
 
+    public void ResetAllProgress()
+    {
+        PlayerPrefs.SetInt("UnlockedLevel", 1);
+        PlayerPrefs.SetInt("ReachedIndex", 1);
+        PlayerPrefs.Save();
+
+        // Refresh the buttons
+        SetupButtons(1);
+        Debug.Log("Game progress reset - only Level 1 is now unlocked");
+    }
+
+    public void ResetLevels()
+    {
+        PlayerPrefs.SetInt("UnlockedLevel", 15);
+        PlayerPrefs.Save();
+
+        // Refresh the buttons with new unlocked level
+        SetupButtons(15);
+        Debug.Log("Levels reset - UnlockedLevel is now: " + PlayerPrefs.GetInt("UnlockedLevel"));
+    }
+
     public void OpenLevel(int levelId)
     {
         Debug.Log($"OpenLevel called with levelId: {levelId}");
         string levelName = "Level" + levelId;
 
-        // Check if the scene exists in build settings
         bool sceneExists = false;
         for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
         {

@@ -6,21 +6,24 @@ public class MazeGenerator : MonoBehaviour
     [Header("Maze Settings")]
     public int width = 10;
     public int height = 10;
-    public float cellSize = 2f;
-    public float wallHeight = 2f;
+    public float cellSize = 1f;
+    public float wallHeight = 1f;
+    public float floorThickness = 0.25f;
 
     [Header("Prefabs")]
     public GameObject wallPrefab;
     public GameObject floorPrefab;
-    public GameObject ballPrefab;
+    public GameObject goalPrefab;
 
-    [Header("Ball Settings")]
-    public float ballSpawnHeight = 1f;
+    [Header("Goal Settings")]
+    public float goalHeight = 0.1f;
+    public Color goalColor = Color.green;
 
     private bool[,] visited;
     private Cell[,] maze;
     private Stack<Vector2Int> stack = new Stack<Vector2Int>();
     private Vector2Int startPosition;
+    private GameObject goalMarker;
 
     private class Cell
     {
@@ -33,7 +36,44 @@ public class MazeGenerator : MonoBehaviour
     void Start()
     {
         GenerateMaze();
+        PlaceGoal();
     }
+
+    void PlaceGoal()
+    {
+        // Calculate the center position of the maze
+        int centerX = width / 2;
+        int centerZ = height / 2;
+
+        // Calculate the world position for the goal, accounting for floor thickness
+        Vector3 goalPosition = new Vector3(
+            centerX * cellSize,
+            floorThickness / 2 + goalHeight, // Place just above the floor surface
+            centerZ * cellSize
+        );
+
+        // Instantiate the goal marker
+        if (goalPrefab != null)
+        {
+            goalMarker = Instantiate(goalPrefab, goalPosition, Quaternion.identity);
+
+            // Scale the goal marker to fit within the cell
+            float goalScale = cellSize * 0.8f; // Make it slightly smaller than the cell
+            goalMarker.transform.localScale = new Vector3(goalScale, goalHeight, goalScale);
+
+            // Set the color
+            Renderer renderer = goalMarker.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = goalColor;
+            }
+
+            // Make the goal marker a child of the maze
+            goalMarker.transform.parent = transform.Find("Maze");
+        }
+    }
+
+
 
     void GenerateMaze()
     {
@@ -87,7 +127,6 @@ public class MazeGenerator : MonoBehaviour
         }
 
         BuildMaze();
-        SpawnBall();
     }
 
     void CreateClearArea(int centerX, int centerZ)
@@ -124,62 +163,6 @@ public class MazeGenerator : MonoBehaviour
             visited[centerX, centerZ + 1] = true;
     }
 
-    void SpawnBall()
-    {
-        if (ballPrefab != null)
-        {
-            // Calculate exact center of the maze
-            float centerX = (width / 2) * cellSize;
-            float centerZ = (height / 2) * cellSize;
-
-            // Create ball and position it immediately at the correct height
-            Vector3 spawnPosition = new Vector3(centerX, ballSpawnHeight, centerZ);
-            GameObject ball = Instantiate(ballPrefab, spawnPosition, Quaternion.identity);
-
-            // Add BallController if it doesn't exist
-            if (!ball.GetComponent<BallController>())
-            {
-                ball.AddComponent<BallController>();
-            }
-
-            // Configure Rigidbody
-            Rigidbody rb = ball.GetComponent<Rigidbody>();
-            if (rb == null)
-            {
-                rb = ball.AddComponent<Rigidbody>();
-            }
-            // Improved physics settings
-            rb.mass = 1f;                    // Lighter mass for better control
-            rb.drag = 0.5f;                  // Add some air resistance
-            rb.angularDrag = 0.5f;           // Smooth out rotation
-            rb.useGravity = true;
-            rb.isKinematic = false;
-            rb.interpolation = RigidbodyInterpolation.Interpolate;  // Smoother movement
-            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;  // Better collision detection
-            rb.maxAngularVelocity = 7f;      // Limit maximum rotation speed
-
-            // Configure SphereCollider
-            SphereCollider sphereCollider = ball.GetComponent<SphereCollider>();
-            if (sphereCollider == null)
-            {
-                sphereCollider = ball.AddComponent<SphereCollider>();
-            }
-            sphereCollider.radius = 0.5f;
-            sphereCollider.isTrigger = false;
-
-            ball.transform.parent = transform;
-
-            // Reset physics state
-            rb.velocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            rb.WakeUp();
-        }
-        else
-        {
-            Debug.LogWarning("Ball prefab not assigned in MazeGenerator!");
-        }
-
-    }
     List<Vector2Int> GetUnvisitedNeighbors(Vector2Int pos)
     {
         List<Vector2Int> neighbors = new List<Vector2Int>();
@@ -241,7 +224,6 @@ public class MazeGenerator : MonoBehaviour
         GameObject mazeParent = new GameObject("Maze");
         mazeParent.transform.parent = transform;
 
-
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < height; z++)
@@ -265,7 +247,6 @@ public class MazeGenerator : MonoBehaviour
                     CreateWall(new Vector3((x - 0.5f) * cellSize, 0, z * cellSize), Quaternion.Euler(0, 90, 0), mazeParent.transform);
             }
         }
-
     }
 
     void CreateWall(Vector3 position, Quaternion rotation, Transform parent)

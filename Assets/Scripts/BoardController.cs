@@ -4,44 +4,85 @@ public class BoardController : MonoBehaviour
 {
     public float rotationSpeed = 50f;
     public float maxRotation = 10f;
+
+    // Physics settings
+    public float physicsUpdateRate = 50f;
+    private float physicsTimeStep;
+    private Vector3 targetRotation;
     private bool isDragging = false;
     private Vector3 lastMousePosition;
 
+    private Rigidbody rb;
+
+    void Start()
+    {
+        // Get or add Rigidbody
+        rb = GetComponent<Rigidbody>();
+        if (rb == null)
+        {
+            rb = gameObject.AddComponent<Rigidbody>();
+        }
+
+        // Configure Rigidbody for stable physics
+        rb.useGravity = false;
+        rb.isKinematic = true;  // Changed to kinematic
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        rb.mass = 100f;  // High mass for stability
+
+        // Configure physics timestep
+        physicsTimeStep = 1f / physicsUpdateRate;
+        Time.fixedDeltaTime = physicsTimeStep;
+        Physics.defaultSolverIterations = 8;  // Increase solver iterations
+        Physics.defaultSolverVelocityIterations = 2;
+
+        targetRotation = transform.localEulerAngles;
+    }
+
     void Update()
     {
-        // Check for mouse input
-        if (Input.GetMouseButtonDown(0)) // Left mouse button pressed
+        HandleInput();
+    }
+
+    void FixedUpdate()
+    {
+        ApplyPhysicsRotation();
+    }
+
+    private void HandleInput()
+    {
+        if (Input.GetMouseButtonDown(0))
         {
             isDragging = true;
             lastMousePosition = Input.mousePosition;
         }
-        else if (Input.GetMouseButtonUp(0)) // Left mouse button released
+        else if (Input.GetMouseButtonUp(0))
         {
             isDragging = false;
         }
 
         if (isDragging)
         {
-            // Calculate mouse movement delta
             Vector3 deltaMouse = Input.mousePosition - lastMousePosition;
 
-            // Get current rotation
-            Vector3 currentRotation = transform.localEulerAngles;
-
-            // Convert to -180 to 180 range
+            Vector3 currentRotation = targetRotation;
             if (currentRotation.x > 180f) currentRotation.x -= 360f;
             if (currentRotation.z > 180f) currentRotation.z -= 360f;
 
-            // Calculate new rotation
-            // Invert X and Y for more intuitive control
-            float newRotationX = Mathf.Clamp(currentRotation.x + (-deltaMouse.y * rotationSpeed * Time.deltaTime), -maxRotation, maxRotation);
-            float newRotationZ = Mathf.Clamp(currentRotation.z + (deltaMouse.x * rotationSpeed * Time.deltaTime), -maxRotation, maxRotation);
+            float rotationMultiplier = 0.5f; // Reduced rotation speed multiplier
+            targetRotation = new Vector3(
+                Mathf.Clamp(currentRotation.x + (-deltaMouse.y * rotationSpeed * Time.deltaTime * rotationMultiplier), -maxRotation, maxRotation),
+                currentRotation.y,
+                Mathf.Clamp(currentRotation.z + (deltaMouse.x * rotationSpeed * Time.deltaTime * rotationMultiplier), -maxRotation, maxRotation)
+            );
 
-            // Apply new rotation
-            transform.localEulerAngles = new Vector3(newRotationX, currentRotation.y, newRotationZ);
-
-            // Update last mouse position
             lastMousePosition = Input.mousePosition;
         }
+    }
+
+    private void ApplyPhysicsRotation()
+    {
+        Quaternion targetQuaternion = Quaternion.Euler(targetRotation);
+        rb.MoveRotation(Quaternion.Lerp(rb.rotation, targetQuaternion, physicsTimeStep * physicsUpdateRate));
     }
 }

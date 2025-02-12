@@ -487,7 +487,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Level 15
+  m_text: 'Level 15
+
+'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1478,6 +1480,8 @@ GameObject:
   - component: {fileID: 884450294}
   - component: {fileID: 884450298}
   - component: {fileID: 884450299}
+  - component: {fileID: 884450301}
+  - component: {fileID: 884450300}
   m_Layer: 0
   m_Name: Ball
   m_TagString: Player
@@ -1504,7 +1508,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
+  m_Radius: 0.55
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &884450295
 MeshRenderer:
@@ -1565,8 +1569,8 @@ Transform:
   m_GameObject: {fileID: 884450293}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 5, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1585,7 +1589,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 1
   respawnPoint: {fileID: 0}
-  timeLimit: 60
+  timeLimit: 10
   timerTextTMP: {fileID: 1122107052}
   timerTextLegacy: {fileID: 0}
   gameOverPanel: {fileID: 73562835}
@@ -1601,7 +1605,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 884450293}
   serializedVersion: 4
-  m_Mass: 5
+  m_Mass: 1
   m_Drag: 0
   m_AngularDrag: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -1620,6 +1624,32 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &884450300
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 884450293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f2a8a98dd9c99b44b8ec121adb7150d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gravityMultiplier: 3
+--- !u!114 &884450301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 884450293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f2a8a98dd9c99b44b8ec121adb7150d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gravityMultiplier: 3
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -1944,6 +1974,9 @@ MonoBehaviour:
   goalPrefab: {fileID: 6478181273344963676, guid: 30cfadf8b4bd56341b58aac724cf7301, type: 3}
   goalHeight: 0.1
   goalColor: {r: 0, g: 1, b: 0, a: 1}
+  addCeiling: 1
+  ceilingVisible: 1
+  ceilingTransparency: 0
 --- !u!1 &1122107050
 GameObject:
   m_ObjectHideFlags: 0
@@ -2465,6 +2498,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rotationSpeed: 50
   maxRotation: 10
+  physicsUpdateRate: 50
 --- !u!4 &2093441433
 Transform:
   m_ObjectHideFlags: 0
@@ -2474,7 +2508,7 @@ Transform:
   m_GameObject: {fileID: 2093441431}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -4.38501, y: 0, z: -4.45}
+  m_LocalPosition: {x: 10, y: 0, z: 10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

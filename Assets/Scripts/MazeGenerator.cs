@@ -19,6 +19,11 @@ public class MazeGenerator : MonoBehaviour
     public float goalHeight = 0.1f;
     public Color goalColor = Color.green;
 
+    [Header("Ceiling Settings")]
+    public bool addCeiling = true;
+    public bool ceilingVisible = true;
+    public float ceilingTransparency = 0.0f; // 0 = fully transparent, 1 = fully opaque
+
     private bool[,] visited;
     private Cell[,] maze;
     private Stack<Vector2Int> stack = new Stack<Vector2Int>();
@@ -224,13 +229,46 @@ public class MazeGenerator : MonoBehaviour
         GameObject mazeParent = new GameObject("Maze");
         mazeParent.transform.parent = transform;
 
+        // Create floor
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < height; z++)
             {
-                Vector3 position = new Vector3(x * cellSize, 0, z * cellSize);
-                GameObject floor = Instantiate(floorPrefab, position, Quaternion.identity, mazeParent.transform);
-                floor.transform.localScale = new Vector3(cellSize, 0.1f, cellSize);
+                // Create floor
+                Vector3 floorPosition = new Vector3(x * cellSize, 0, z * cellSize);
+                GameObject floor = Instantiate(floorPrefab, floorPosition, Quaternion.identity, mazeParent.transform);
+                floor.transform.localScale = new Vector3(cellSize, floorThickness, cellSize);
+
+                // Create ceiling
+                if (addCeiling)
+                {
+                    Vector3 ceilingPosition = new Vector3(x * cellSize, wallHeight, z * cellSize);
+                    GameObject ceiling = Instantiate(floorPrefab, ceilingPosition, Quaternion.identity, mazeParent.transform);
+                    ceiling.transform.localScale = new Vector3(cellSize, floorThickness, cellSize);
+
+                    // Get the MeshRenderer component and set its enabled state
+                    MeshRenderer ceilingRenderer = ceiling.GetComponent<MeshRenderer>();
+                    if (ceilingRenderer != null)
+                    {
+                        ceilingRenderer.enabled = ceilingVisible;
+
+                        // Create a new transparent material
+                        Material ceilingMaterial = new Material(Shader.Find("Standard"));
+                        ceilingMaterial.SetFloat("_Mode", 3); // Set to transparent mode
+                        ceilingMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                        ceilingMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                        ceilingMaterial.SetInt("_ZWrite", 0);
+                        ceilingMaterial.DisableKeyword("_ALPHATEST_ON");
+                        ceilingMaterial.EnableKeyword("_ALPHABLEND_ON");
+                        ceilingMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                        ceilingMaterial.renderQueue = 3000;
+
+                        // Set the color to clear (fully transparent)
+                        ceilingMaterial.color = new Color(1, 1, 1, ceilingTransparency);
+
+                        ceilingRenderer.material = ceilingMaterial;
+                    }
+                }
 
                 Cell cell = maze[x, z];
 
@@ -253,5 +291,26 @@ public class MazeGenerator : MonoBehaviour
     {
         GameObject wall = Instantiate(wallPrefab, position, rotation, parent);
         wall.transform.localScale = new Vector3(cellSize, wallHeight, 0.1f);
+    }
+
+    // Add this method to toggle ceiling visibility at runtime
+    public void ToggleCeilingVisibility()
+    {
+        ceilingVisible = !ceilingVisible;
+
+        // Find all ceiling objects and update their visibility
+        Transform mazeTransform = transform.Find("Maze");
+        if (mazeTransform != null)
+        {
+            MeshRenderer[] ceilingRenderers = mazeTransform.GetComponentsInChildren<MeshRenderer>();
+            foreach (MeshRenderer renderer in ceilingRenderers)
+            {
+                // Check if this is a ceiling object (you might want to add a tag or layer to be more precise)
+                if (renderer.transform.position.y > wallHeight / 2)
+                {
+                    renderer.enabled = ceilingVisible;
+                }
+            }
+        }
     }
 }

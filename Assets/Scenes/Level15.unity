@@ -1589,7 +1589,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 1
   respawnPoint: {fileID: 0}
-  timeLimit: 10
+  timeLimit: 60
   timerTextTMP: {fileID: 1122107052}
   timerTextLegacy: {fileID: 0}
   gameOverPanel: {fileID: 73562835}

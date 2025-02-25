@@ -250,21 +250,15 @@ public class MazeGenerator : MonoBehaviour
                     MeshRenderer ceilingRenderer = ceiling.GetComponent<MeshRenderer>();
                     if (ceilingRenderer != null)
                     {
+                        // For WebGL compatibility, use a simpler approach to visibility
                         ceilingRenderer.enabled = ceilingVisible;
 
-                        // Create a new transparent material
-                        Material ceilingMaterial = new Material(Shader.Find("Standard"));
-                        ceilingMaterial.SetFloat("_Mode", 3); // Set to transparent mode
-                        ceilingMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                        ceilingMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                        ceilingMaterial.SetInt("_ZWrite", 0);
-                        ceilingMaterial.DisableKeyword("_ALPHATEST_ON");
-                        ceilingMaterial.EnableKeyword("_ALPHABLEND_ON");
-                        ceilingMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                        ceilingMaterial.renderQueue = 3000;
+                        // Use a shader that's compatible with WebGL
+                        Material ceilingMaterial = new Material(Shader.Find("Transparent/Diffuse"));
 
-                        // Set the color to clear (fully transparent)
-                        ceilingMaterial.color = new Color(1, 1, 1, ceilingTransparency);
+                        // Set the color with proper transparency
+                        Color ceilingColor = new Color(1, 1, 1, ceilingTransparency);
+                        ceilingMaterial.color = ceilingColor;
 
                         ceilingRenderer.material = ceilingMaterial;
                     }
@@ -305,10 +299,19 @@ public class MazeGenerator : MonoBehaviour
             MeshRenderer[] ceilingRenderers = mazeTransform.GetComponentsInChildren<MeshRenderer>();
             foreach (MeshRenderer renderer in ceilingRenderers)
             {
-                // Check if this is a ceiling object (you might want to add a tag or layer to be more precise)
+                // Check if this is a ceiling object
                 if (renderer.transform.position.y > wallHeight / 2)
                 {
                     renderer.enabled = ceilingVisible;
+
+                    // Also update the material transparency if needed
+                    if (ceilingVisible && ceilingTransparency < 1.0f)
+                    {
+                        Material mat = renderer.material;
+                        Color color = mat.color;
+                        color.a = ceilingTransparency;
+                        mat.color = color;
+                    }
                 }
             }
         }

@@ -21,7 +21,7 @@ public class MazeGenerator : MonoBehaviour
 
     [Header("Ceiling Settings")]
     public bool addCeiling = true;
-    public bool ceilingVisible = true;
+    public bool ceilingVisible = false; // Set default to false for WebGL
     public float ceilingTransparency = 0.0f; // 0 = fully transparent, 1 = fully opaque
 
     private bool[,] visited;
@@ -42,6 +42,32 @@ public class MazeGenerator : MonoBehaviour
     {
         GenerateMaze();
         PlaceGoal();
+
+        // Always ensure ceiling is invisible in WebGL builds
+#if UNITY_WEBGL
+        DisableCeilings();
+#endif
+    }
+
+    // New method to force disable all ceilings
+    public void DisableCeilings()
+    {
+        Transform mazeTransform = transform.Find("Maze");
+        if (mazeTransform != null)
+        {
+            foreach (Transform child in mazeTransform)
+            {
+                // Check if this is a ceiling by its Y position
+                if (child.position.y > wallHeight / 2)
+                {
+                    MeshRenderer renderer = child.GetComponent<MeshRenderer>();
+                    if (renderer != null)
+                    {
+                        renderer.enabled = false;
+                    }
+                }
+            }
+        }
     }
 
     void PlaceGoal()
@@ -77,8 +103,6 @@ public class MazeGenerator : MonoBehaviour
             goalMarker.transform.parent = transform.Find("Maze");
         }
     }
-
-
 
     void GenerateMaze()
     {
@@ -229,7 +253,7 @@ public class MazeGenerator : MonoBehaviour
         GameObject mazeParent = new GameObject("Maze");
         mazeParent.transform.parent = transform;
 
-        // Create floor
+        // Create floor and ceiling
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < height; z++)
@@ -239,8 +263,10 @@ public class MazeGenerator : MonoBehaviour
                 GameObject floor = Instantiate(floorPrefab, floorPosition, Quaternion.identity, mazeParent.transform);
                 floor.transform.localScale = new Vector3(cellSize, floorThickness, cellSize);
 
-                // Create ceiling
+                // Create ceiling (skipped in WebGL builds)
+#if !UNITY_WEBGL
                 if (addCeiling)
+#endif
                 {
                     Vector3 ceilingPosition = new Vector3(x * cellSize, wallHeight, z * cellSize);
                     GameObject ceiling = Instantiate(floorPrefab, ceilingPosition, Quaternion.identity, mazeParent.transform);
@@ -250,7 +276,11 @@ public class MazeGenerator : MonoBehaviour
                     MeshRenderer ceilingRenderer = ceiling.GetComponent<MeshRenderer>();
                     if (ceilingRenderer != null)
                     {
+#if UNITY_WEBGL
+                        ceilingRenderer.enabled = false; // Always false in WebGL
+#else
                         ceilingRenderer.enabled = ceilingVisible;
+#endif
 
                         // Create a new transparent material
                         Material ceilingMaterial = new Material(Shader.Find("Standard"));
@@ -263,8 +293,12 @@ public class MazeGenerator : MonoBehaviour
                         ceilingMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
                         ceilingMaterial.renderQueue = 3000;
 
-                        // Set the color to clear (fully transparent)
+                        // Set transparency
+#if UNITY_WEBGL
+                        ceilingMaterial.color = new Color(1, 1, 1, 0); // Fully transparent in WebGL
+#else
                         ceilingMaterial.color = new Color(1, 1, 1, ceilingTransparency);
+#endif
 
                         ceilingRenderer.material = ceilingMaterial;
                     }
@@ -293,9 +327,10 @@ public class MazeGenerator : MonoBehaviour
         wall.transform.localScale = new Vector3(cellSize, wallHeight, 0.1f);
     }
 
-    // Add this method to toggle ceiling visibility at runtime
+    // Toggle ceiling visibility at runtime
     public void ToggleCeilingVisibility()
     {
+#if !UNITY_WEBGL
         ceilingVisible = !ceilingVisible;
 
         // Find all ceiling objects and update their visibility
@@ -305,12 +340,13 @@ public class MazeGenerator : MonoBehaviour
             MeshRenderer[] ceilingRenderers = mazeTransform.GetComponentsInChildren<MeshRenderer>();
             foreach (MeshRenderer renderer in ceilingRenderers)
             {
-                // Check if this is a ceiling object (you might want to add a tag or layer to be more precise)
+                // Check if this is a ceiling object
                 if (renderer.transform.position.y > wallHeight / 2)
                 {
                     renderer.enabled = ceilingVisible;
                 }
             }
         }
+#endif
     }
 }

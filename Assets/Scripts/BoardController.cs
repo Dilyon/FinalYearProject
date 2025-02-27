@@ -8,11 +8,16 @@ public class BoardController : MonoBehaviour
     // Physics settings
     public float physicsUpdateRate = 50f;
     private float physicsTimeStep;
+
+    // Add max rotation speed limit
+    public float maxRotationSpeed = 30f;
+
     private Vector3 targetRotation;
     private bool isDragging = false;
     private Vector3 lastMousePosition;
-
     private Rigidbody rb;
+    private Vector3 previousRotation;
+    private float rotationDelta;
 
     void Start()
     {
@@ -25,18 +30,19 @@ public class BoardController : MonoBehaviour
 
         // Configure Rigidbody for stable physics
         rb.useGravity = false;
-        rb.isKinematic = true;  // Changed to kinematic
+        rb.isKinematic = true;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        rb.mass = 100f;  // High mass for stability
+        rb.mass = 100f;
 
         // Configure physics timestep
         physicsTimeStep = 1f / physicsUpdateRate;
         Time.fixedDeltaTime = physicsTimeStep;
-        Physics.defaultSolverIterations = 8;  // Increase solver iterations
-        Physics.defaultSolverVelocityIterations = 2;
+        Physics.defaultSolverIterations = 12;  // Increased solver iterations for better accuracy
+        Physics.defaultSolverVelocityIterations = 4;  // Increased velocity iterations
 
         targetRotation = transform.localEulerAngles;
+        previousRotation = targetRotation;
     }
 
     void Update()
@@ -64,18 +70,35 @@ public class BoardController : MonoBehaviour
         if (isDragging)
         {
             Vector3 deltaMouse = Input.mousePosition - lastMousePosition;
-
             Vector3 currentRotation = targetRotation;
+
             if (currentRotation.x > 180f) currentRotation.x -= 360f;
             if (currentRotation.z > 180f) currentRotation.z -= 360f;
 
-            float rotationMultiplier = 0.5f; // Reduced rotation speed multiplier
-            targetRotation = new Vector3(
+            // Store previous rotation for speed calculation
+            previousRotation = targetRotation;
+
+            // Calculate new target rotation with reduced multiplier
+            float rotationMultiplier = 0.3f;  // Further reduced for better control
+
+            Vector3 newRotation = new Vector3(
                 Mathf.Clamp(currentRotation.x + (-deltaMouse.y * rotationSpeed * Time.deltaTime * rotationMultiplier), -maxRotation, maxRotation),
                 currentRotation.y,
                 Mathf.Clamp(currentRotation.z + (deltaMouse.x * rotationSpeed * Time.deltaTime * rotationMultiplier), -maxRotation, maxRotation)
             );
 
+            // Calculate and limit rotation speed
+            Vector3 rotationChange = newRotation - previousRotation;
+            float rotationMagnitude = rotationChange.magnitude;
+
+            if (rotationMagnitude > maxRotationSpeed * Time.deltaTime)
+            {
+                // Scale down the rotation change to match max speed
+                rotationChange = rotationChange.normalized * (maxRotationSpeed * Time.deltaTime);
+                newRotation = previousRotation + rotationChange;
+            }
+
+            targetRotation = newRotation;
             lastMousePosition = Input.mousePosition;
         }
     }
@@ -83,6 +106,11 @@ public class BoardController : MonoBehaviour
     private void ApplyPhysicsRotation()
     {
         Quaternion targetQuaternion = Quaternion.Euler(targetRotation);
-        rb.MoveRotation(Quaternion.Lerp(rb.rotation, targetQuaternion, physicsTimeStep * physicsUpdateRate));
+
+        // Limit the maximum rotation change per physics step
+        float maxStepRotation = maxRotationSpeed * physicsTimeStep;
+        Quaternion nextRotation = Quaternion.RotateTowards(rb.rotation, targetQuaternion, maxStepRotation);
+
+        rb.MoveRotation(nextRotation);
     }
 }

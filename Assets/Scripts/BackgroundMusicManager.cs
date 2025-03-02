@@ -13,6 +13,11 @@ public class SceneBackgroundMusic : MonoBehaviour
     [SerializeField] private float fadeInDuration = 2f;
     [SerializeField] private float fadeOutDuration = 2f;
 
+    [Header("Persistence")]
+    [SerializeField] private string volumePrefsKey = "MusicVolume";
+    [SerializeField] private string mutedPrefsKey = "MusicMuted";
+    [SerializeField] private bool loadSavedVolume = true;
+
     private AudioSource audioSource;
     private Coroutine fadeCoroutine;
 
@@ -23,6 +28,22 @@ public class SceneBackgroundMusic : MonoBehaviour
         audioSource.clip = musicTrack;
         audioSource.playOnAwake = false;
         audioSource.loop = loopMusic;
+
+        // Load saved volume settings if enabled
+        if (loadSavedVolume)
+        {
+            bool isMuted = PlayerPrefs.GetInt(mutedPrefsKey, 0) == 1;
+
+            if (isMuted)
+            {
+                volume = 0f;
+            }
+            else
+            {
+                volume = PlayerPrefs.GetFloat(volumePrefsKey, volume);
+            }
+        }
+
         audioSource.volume = 0f; // Start at 0 for fade in
     }
 
@@ -41,7 +62,6 @@ public class SceneBackgroundMusic : MonoBehaviour
         {
             StopCoroutine(fadeCoroutine);
         }
-
         if (audioSource != null)
         {
             audioSource.Stop();
@@ -55,30 +75,25 @@ public class SceneBackgroundMusic : MonoBehaviour
             Debug.LogError("AudioSource not initialized!");
             return;
         }
-
         if (musicTrack == null)
         {
             Debug.LogError("No music track assigned!");
             return;
         }
-
         if (fadeCoroutine != null)
         {
             StopCoroutine(fadeCoroutine);
         }
-
         fadeCoroutine = StartCoroutine(FadeIn());
     }
 
     public void StopMusic()
     {
         if (audioSource == null) return;
-
         if (fadeCoroutine != null)
         {
             StopCoroutine(fadeCoroutine);
         }
-
         fadeCoroutine = StartCoroutine(FadeOut());
     }
 
@@ -101,7 +116,6 @@ public class SceneBackgroundMusic : MonoBehaviour
     public void SetVolume(float newVolume)
     {
         if (audioSource == null) return;
-
         volume = Mathf.Clamp01(newVolume);
         audioSource.volume = volume;
     }

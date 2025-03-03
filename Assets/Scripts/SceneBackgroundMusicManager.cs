@@ -20,14 +20,21 @@ public class SceneBackgroundMusic : MonoBehaviour
 
     private AudioSource audioSource;
     private Coroutine fadeCoroutine;
+    private bool isPlayingMusic = false;
 
     private void Awake()
     {
         // Set up AudioSource in Awake instead of Start
-        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
         audioSource.clip = musicTrack;
         audioSource.playOnAwake = false;
         audioSource.loop = loopMusic;
+        audioSource.ignoreListenerPause = true; // Make sure audio plays even when game is paused
 
         // Load saved volume settings if enabled
         if (loadSavedVolume)
@@ -65,6 +72,7 @@ public class SceneBackgroundMusic : MonoBehaviour
         if (audioSource != null)
         {
             audioSource.Stop();
+            isPlayingMusic = false;
         }
     }
 
@@ -90,16 +98,26 @@ public class SceneBackgroundMusic : MonoBehaviour
     public void StopMusic()
     {
         if (audioSource == null) return;
-        if (fadeCoroutine != null)
+
+        // Only attempt to stop if currently playing
+        if (audioSource.isPlaying)
         {
-            StopCoroutine(fadeCoroutine);
+            Debug.Log($"Stopping music on {gameObject.name}");
+            if (fadeCoroutine != null)
+            {
+                StopCoroutine(fadeCoroutine);
+            }
+            fadeCoroutine = StartCoroutine(FadeOut());
         }
-        fadeCoroutine = StartCoroutine(FadeOut());
+        else
+        {
+            Debug.Log($"Music already stopped on {gameObject.name}");
+        }
     }
 
     public void PauseMusic()
     {
-        if (audioSource != null)
+        if (audioSource != null && audioSource.isPlaying)
         {
             audioSource.Pause();
         }
@@ -107,7 +125,7 @@ public class SceneBackgroundMusic : MonoBehaviour
 
     public void ResumeMusic()
     {
-        if (audioSource != null)
+        if (audioSource != null && !audioSource.isPlaying && isPlayingMusic)
         {
             audioSource.UnPause();
         }
@@ -118,34 +136,51 @@ public class SceneBackgroundMusic : MonoBehaviour
         if (audioSource == null) return;
         volume = Mathf.Clamp01(newVolume);
         audioSource.volume = volume;
+
+        // Save volume preference
+        PlayerPrefs.SetFloat(volumePrefsKey, volume);
+        PlayerPrefs.SetInt(mutedPrefsKey, volume <= 0 ? 1 : 0);
+        PlayerPrefs.Save();
     }
 
     private IEnumerator FadeIn()
     {
+        Debug.Log($"Starting fade in music on {gameObject.name}");
         audioSource.Play();
+        isPlayingMusic = true;
         float timeElapsed = 0;
+
         while (timeElapsed < fadeInDuration)
         {
-            timeElapsed += Time.deltaTime;
+            // Use unscaledDeltaTime to work when game is paused
+            timeElapsed += Time.unscaledDeltaTime;
             float newVolume = Mathf.Lerp(0, volume, timeElapsed / fadeInDuration);
             audioSource.volume = newVolume;
             yield return null;
         }
+
         audioSource.volume = volume;
+        Debug.Log($"Fade in complete on {gameObject.name}, volume: {audioSource.volume}");
     }
 
     private IEnumerator FadeOut()
     {
+        Debug.Log($"Starting fade out music on {gameObject.name}");
         float timeElapsed = 0;
         float startVolume = audioSource.volume;
+
         while (timeElapsed < fadeOutDuration)
         {
-            timeElapsed += Time.deltaTime;
+            // Use unscaledDeltaTime to work when game is paused
+            timeElapsed += Time.unscaledDeltaTime;
             float newVolume = Mathf.Lerp(startVolume, 0, timeElapsed / fadeOutDuration);
             audioSource.volume = newVolume;
             yield return null;
         }
+
         audioSource.Stop();
         audioSource.volume = 0;
+        isPlayingMusic = false;
+        Debug.Log($"Background music stopped and faded out on {gameObject.name}");
     }
 }

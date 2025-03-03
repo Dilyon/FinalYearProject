@@ -4729,6 +4729,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   goNextLevel: 0
   levelName: 
+  winningMusic: {fileID: 0}
+  musicVolume: 1
+  fadeInDuration: 1
 --- !u!1 &1295692289
 GameObject:
   m_ObjectHideFlags: 0

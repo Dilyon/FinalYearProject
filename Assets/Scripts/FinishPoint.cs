@@ -10,28 +10,96 @@ public class FinishPoint : MonoBehaviour
     [SerializeField] bool goNextLevel;
     [SerializeField] string levelName;
 
+    [Header("Music Settings")]
+    [SerializeField] AudioClip winningMusic; // Add this field for your music clip
+    [SerializeField] float musicVolume = 1.0f; // Optional: to control volume
+    [SerializeField] float fadeInDuration = 1.0f; // How quickly the winning music fades in
+
+    // Create a separate GameObject for the winning music
+    // This is the key change - use a separate audio source that won't be affected by scene changes
+    private static GameObject winningMusicObj;
+    private static AudioSource winningMusicSource;
+
     private GameObject winPanel;
     private const string WIN_PANEL_NAME = "WinPanel";
+    private Coroutine fadeInCoroutine;
+
+    private void Awake()
+    {
+        // Create a persistent audio source if it doesn't exist
+        if (winningMusicObj == null)
+        {
+            winningMusicObj = new GameObject("WinningMusicPlayer");
+            DontDestroyOnLoad(winningMusicObj); // This keeps it alive between scenes
+            winningMusicSource = winningMusicObj.AddComponent<AudioSource>();
+            winningMusicSource.playOnAwake = false;
+            winningMusicSource.loop = true;
+            winningMusicSource.volume = 0f;
+            winningMusicSource.ignoreListenerPause = true;
+        }
+    }
 
     private void OnTriggerEnter(Collider collision)
     {
         if (collision.CompareTag("Player"))
         {
+            Debug.Log("Player reached finish point!");
             UnlockNewLevel();
 
+            // Check if this is the last level
             if (SceneManager.GetActiveScene().buildIndex + 1 < SceneManager.sceneCountInBuildSettings)
             {
                 SceneController.instance.NextLevel();
             }
             else
             {
-                CreateAndShowWinPanel();
+                // Start playing music BEFORE creating the win panel or pausing the game
+                PlayWinningMusic();
+
+                // Small delay to ensure music starts before UI shows
+                StartCoroutine(ShowWinPanelAfterDelay(0.1f));
             }
+        }
+    }
+
+    private IEnumerator ShowWinPanelAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        CreateAndShowWinPanel();
+    }
+
+    // Play winning music using our persistent audio source
+    private void PlayWinningMusic()
+    {
+        // Stop background music
+        StopBackgroundMusic();
+
+        // Verify winning music is assigned
+        if (winningMusic != null && winningMusicSource != null)
+        {
+            Debug.Log("Starting winning music on persistent audio source");
+
+            // Configure the audio source
+            winningMusicSource.clip = winningMusic;
+            winningMusicSource.loop = true;
+            winningMusicSource.volume = 0f; // Start at 0 for fade in
+
+            // Immediately play at full volume - no fade
+            winningMusicSource.Play();
+            winningMusicSource.volume = musicVolume;
+
+            Debug.Log($"Winning music status - isPlaying: {winningMusicSource.isPlaying}, volume: {winningMusicSource.volume}");
+        }
+        else
+        {
+            Debug.LogError("Winning music clip not assigned or audio source not created!");
         }
     }
 
     void CreateAndShowWinPanel()
     {
+        Debug.Log("CreateAndShowWinPanel called");
+
         // First try to find an existing win panel
         winPanel = GameObject.Find(WIN_PANEL_NAME);
 
@@ -113,12 +181,41 @@ public class FinishPoint : MonoBehaviour
             // Add button click event
             menuButton.onClick.AddListener(() => {
                 Time.timeScale = 1f; // Reset time scale
+
+                // Stop winning music when returning to main menu
+                if (winningMusicSource != null && winningMusicSource.isPlaying)
+                {
+                    winningMusicSource.Stop();
+                }
+
                 SceneManager.LoadScene(0); // Load main menu (scene 0)
             });
         }
 
+        // Show the win panel and pause the game
         winPanel.SetActive(true);
         Time.timeScale = 0f;
+        Debug.Log("Win panel shown and game paused");
+    }
+
+    // Method to stop background music properly using your SceneBackgroundMusic class
+    void StopBackgroundMusic()
+    {
+        // Find all SceneBackgroundMusic instances (including inactive objects)
+        SceneBackgroundMusic[] musicManagers = FindObjectsOfType<SceneBackgroundMusic>(true);
+
+        if (musicManagers.Length > 0)
+        {
+            foreach (SceneBackgroundMusic musicManager in musicManagers)
+            {
+                Debug.Log($"Stopping music from: {musicManager.gameObject.name}");
+                musicManager.StopMusic();
+            }
+        }
+        else
+        {
+            Debug.LogWarning("No SceneBackgroundMusic found in the scene - check if it exists");
+        }
     }
 
     void UnlockNewLevel()

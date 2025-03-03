@@ -120,3 +120,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   goNextLevel: 0
   levelName: 
+  winningMusic: {fileID: 8300000, guid: c41541856d4b9e64283cd63c6759a251, type: 3}
+  musicVolume: 50
+  fadeInDuration: 1

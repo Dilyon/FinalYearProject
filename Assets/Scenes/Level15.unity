@@ -2048,7 +2048,6 @@ GameObject:
   - component: {fileID: 884450298}
   - component: {fileID: 884450299}
   - component: {fileID: 884450301}
-  - component: {fileID: 884450300}
   m_Layer: 0
   m_Name: Ball
   m_TagString: Player
@@ -2191,19 +2190,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &884450300
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 884450293}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f2a8a98dd9c99b44b8ec121adb7150d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gravityMultiplier: 3
 --- !u!114 &884450301
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3332,7 +3318,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 391abf3fdf3d5e34eb1d666740bd1ce4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicTrack: {fileID: 8300000, guid: b2b2198686e344e4ab8deb409251a2b0, type: 3}
+  musicTrack: {fileID: 8300000, guid: d1eddc102bee5df4c89992a21bf2f1d3, type: 3}
   playOnAwake: 1
   loopMusic: 1
   volume: 1

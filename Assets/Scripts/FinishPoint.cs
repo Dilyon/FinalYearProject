@@ -12,7 +12,7 @@ public class FinishPoint : MonoBehaviour
 
     [Header("Music Settings")]
     [SerializeField] AudioClip winningMusic; // Add this field for your music clip
-    [SerializeField] float musicVolume = 1.0f; // Optional: to control volume
+    [SerializeField] float musicVolume = 0.5f; // Optional: to control volume
     [SerializeField] float fadeInDuration = 1.0f; // How quickly the winning music fades in
 
     // Create a separate GameObject for the winning music

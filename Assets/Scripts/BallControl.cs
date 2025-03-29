@@ -5,87 +5,94 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.UI;
 
+/// <summary>
+/// Controls the ball's movement, game state, and UI interactions
+/// </summary>
 public class BallControl : MonoBehaviour
 {
-    public float speed = 1.0f;
-    private Rigidbody rb;
-    public Transform respawnPoint;
+    // Movement properties
+    public float speed = 1.0f;            // Speed multiplier for ball movement
+    private Rigidbody rb;                 // Reference to the ball's Rigidbody component
+    public Transform respawnPoint;        // Point where the ball respawns if needed
 
-    public float timeLimit = 60f;
-    private float currentTime;
+    // Timer properties
+    public float timeLimit = 60f;         // Total time allowed for the level in seconds
+    private float currentTime;            // Current remaining time
 
-    public TMP_Text timerTextTMP;
-    public Text timerTextLegacy;
-    public GameObject gameOverPanel;
-    public TMP_Text gameOverTextTMP;
-    public Text gameOverTextLegacy;
-    public Button restartButton;
-    private HealthBarSystem healthSystem;
+    // UI references
+    public TMP_Text timerTextTMP;         // Reference to TextMeshPro timer display
+    public Text timerTextLegacy;          // Reference to legacy UI Text timer display
+    public GameObject gameOverPanel;      // Panel to show when game is over
+    public TMP_Text gameOverTextTMP;      // TextMeshPro text to display game over message
+    public Text gameOverTextLegacy;       // Legacy UI text to display game over message
+    public Button restartButton;          // Button to restart the game
 
-    private bool isGameOver = false;
+    // Health system reference
+    private HealthBarSystem healthSystem;  // Reference to health system component
 
-    // Add fade effect duration for smooth transition
-    public float fadeTime = 1.0f;
+    // Game state
+    private bool isGameOver = false;      // Tracks if the game is over
 
-    // Reference to any player input/movement script
-    // Add references to any other movement scripts you have
-    private MonoBehaviour[] movementScripts;
+    // Transition properties
+    public float fadeTime = 1.0f;         // Time for scene transition fade effect
 
+    // Movement script references
+    private MonoBehaviour[] movementScripts;  // Array of all movement scripts on this object
+
+    /// <summary>
+    /// Initializes components and game state
+    /// </summary>
     void Start()
     {
-        Debug.Log("Game Started");
+        // Get and configure Rigidbody
         rb = GetComponent<Rigidbody>();
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
+        // Initialize timer
         currentTime = timeLimit;
 
-        // Ensure time scale is set to 1 at the start of the game
+        // Ensure normal time flow
         Time.timeScale = 1f;
 
-        // Find and store references to any movement scripts attached to this object
-        // This will help us disable them when the game is over
+        // Get all movement scripts on this object
         movementScripts = GetComponents<MonoBehaviour>();
 
-        // Get the HealthBarSystem component
+        // Set up health system connections
         healthSystem = GetComponent<HealthBarSystem>();
         if (healthSystem != null)
         {
-            // Subscribe to the health depleted event
+            // Listen for health depletion events
             healthSystem.onHealthDepleted.AddListener(OnHealthDepleted);
         }
-        else
-        {
-            Debug.LogWarning("HealthBarSystem not found on the player!");
-        }
 
+        // Set up UI elements
         if (gameOverPanel != null)
-            gameOverPanel.SetActive(false);
+            gameOverPanel.SetActive(false);  // Hide game over panel initially
         if (restartButton != null)
         {
+            // Add listener for restart button clicks
             restartButton.onClick.AddListener(RestartGame);
-            Debug.Log("Restart button listener added");
-        }
-        else
-        {
-            Debug.LogWarning("Restart button not assigned in inspector!");
         }
     }
 
+    /// <summary>
+    /// Coroutine to handle level transition with fade effect
+    /// </summary>
     IEnumerator LoadNextLevel()
     {
-        // Freeze the ball's movement
+        // Freeze ball movement during transition
         rb.isKinematic = true;
 
-        // Optional: Add a fade effect or transition animation here
-        // Wait for fadeTime seconds
-        yield return new WaitForSecondsRealtime(fadeTime); // Using WaitForSecondsRealtime to work even when timeScale = 0
+        // Wait for fade effect duration
+        yield return new WaitForSecondsRealtime(fadeTime);
 
-        // Get the current scene index
+        // Get current scene index
         int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
 
-        // Ensure time scale is reset before loading the next scene
+        // Reset time scale before loading new scene
         Time.timeScale = 1f;
 
-        // Check if there's a next level
+        // Check if there's another level to load
         if (currentSceneIndex + 1 < SceneManager.sceneCountInBuildSettings)
         {
             // Load the next level
@@ -93,35 +100,41 @@ public class BallControl : MonoBehaviour
         }
         else
         {
-            // If this is the last level, show game completion screen
+            // If this was the final level, show completion message
             ShowGameOverScreen("Congratulations!\nYou've completed all levels!");
         }
     }
 
+    /// <summary>
+    /// Updates game state every frame
+    /// </summary>
     void Update()
     {
-        // Only process game logic if the game is not over
+        // Only update if game is still active
         if (!isGameOver)
         {
+            // Decrease timer
             currentTime -= Time.deltaTime;
+
+            // Update timer display, rounding up to nearest second
             UpdateTimerDisplay(Mathf.Ceil(currentTime).ToString());
 
+            // Check for time expiration
             if (currentTime <= 0)
             {
                 GameOver();
             }
-
-            // Your player movement code might be here
-            // It will not execute if isGameOver is true
         }
     }
 
+    /// <summary>
+    /// Handles physics updates at fixed intervals
+    /// </summary>
     void FixedUpdate()
     {
-        // If you have physics-based movement, make sure to check isGameOver here too
+        // If game is over, stop all physics movement
         if (isGameOver)
         {
-            // Ensure the velocity is zero when game is over
             if (rb != null)
             {
                 rb.velocity = Vector3.zero;
@@ -130,29 +143,25 @@ public class BallControl : MonoBehaviour
             return;
         }
 
-        // Your physics-based movement code would be here
+        // Physics-based movement would normally go here
     }
 
-    // This method will disable all player movement scripts
+    /// <summary>
+    /// Disables all movement scripts to freeze player control
+    /// </summary>
     void DisableAllMovementScripts()
     {
-        // Disable this script's ability to receive input, but keep the script enabled
-        // for the game over logic to work
-
-        // Disable velocity and make kinematic
+        // Stop physics movement
         if (rb != null)
         {
             rb.velocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
-            rb.isKinematic = true;
+            rb.isKinematic = true;  // Make kinematic to prevent further physics
         }
 
-        // Disable all other player movement scripts
-        // This is a generic approach - you may need to customize it
-        // to target specific scripts in your project
+        // Disable all movement scripts except this one
         foreach (MonoBehaviour script in movementScripts)
         {
-            // Skip disabling this script (BallControl)
             if (script != this)
             {
                 script.enabled = false;
@@ -160,105 +169,138 @@ public class BallControl : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Updates the timer display with the current time
+    /// </summary>
+    /// <param name="timeText">The time value to display</param>
     private void UpdateTimerDisplay(string timeText)
     {
+        // Update TextMeshPro text if available
         if (timerTextTMP != null)
             timerTextTMP.text = "Time: " + timeText;
+        // Otherwise update legacy UI Text
         else if (timerTextLegacy != null)
             timerTextLegacy.text = "Time: " + timeText;
     }
 
+    /// <summary>
+    /// Updates the game over message text
+    /// </summary>
+    /// <param name="message">Message to display on game over screen</param>
     private void UpdateGameOverText(string message)
     {
+        // Update TextMeshPro text if available
         if (gameOverTextTMP != null)
             gameOverTextTMP.text = message;
+        // Otherwise update legacy UI Text
         else if (gameOverTextLegacy != null)
             gameOverTextLegacy.text = message;
     }
 
+    /// <summary>
+    /// Handles game over state when player fails
+    /// </summary>
     void GameOver()
     {
-        Debug.Log("Game Over triggered");
+        // Set game over flag
         isGameOver = true;
 
-        // Pause the game by setting timeScale to 0
+        // Freeze game time
         Time.timeScale = 0f;
 
-        // Disable player movement completely
+        // Disable player movement
         DisableAllMovementScripts();
 
+        // Show game over UI with message
         ShowGameOverScreen("Time's Up! You lost!");
     }
 
+    /// <summary>
+    /// Displays the game over screen with a specific message
+    /// </summary>
+    /// <param name="message">Message to display</param>
     void ShowGameOverScreen(string message)
     {
-        Debug.Log("Showing game over screen");
+        // Show panel if available
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
+            // Update text with message
             UpdateGameOverText(message);
-        }
-        else
-        {
-            Debug.LogWarning("Game Over Panel is not assigned!");
         }
     }
 
+    /// <summary>
+    /// Restarts the current level
+    /// </summary>
     public void RestartGame()
     {
-        Debug.Log("RestartGame function called");
-
-        // Reset time scale before reloading
+        // Reset time scale
         Time.timeScale = 1f;
 
         // Reload the current scene
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
+    /// <summary>
+    /// Event handler for when player health reaches zero
+    /// </summary>
     private void OnHealthDepleted()
     {
-        Debug.Log("Health depleted - Game Over");
+        // Set game over flag
         isGameOver = true;
 
-        // Pause the game
+        // Freeze game time
         Time.timeScale = 0f;
 
-        // Disable player movement completely
+        // Disable player movement
         DisableAllMovementScripts();
 
+        // Show game over UI with health depleted message
         ShowGameOverScreen("Health Depleted!");
     }
 
-    // Optional - Add a method to handle level completion
+    /// <summary>
+    /// Handles successful level completion
+    /// </summary>
     public void CompleteLevel()
     {
+        // Only proceed if game is still active
         if (!isGameOver)
         {
+            // Set game over flag
             isGameOver = true;
+
+            // Disable player movement
             DisableAllMovementScripts();
+
+            // Start transition to next level
             StartCoroutine(LoadNextLevel());
         }
     }
 
+    /// <summary>
+    /// Cleanup when object is destroyed
+    /// </summary>
     private void OnDestroy()
     {
-        // Make sure to reset timeScale when this object is destroyed
+        // Ensure time scale is reset
         Time.timeScale = 1f;
 
+        // Unsubscribe from health system events
         if (healthSystem != null)
         {
             healthSystem.onHealthDepleted.RemoveListener(OnHealthDepleted);
         }
     }
 
-    // If you're using Input system directly in a separate method, make sure to check isGameOver
-    // Example: If you have methods like HandleInput() or similar
+    /// <summary>
+    /// Handles player input
+    /// </summary>
     void HandleInput()
     {
-        // Only process input if game is not over
+        // Skip input processing if game is over
         if (isGameOver)
             return;
-
-        // Input handling code would go here
     }
 }

@@ -25,9 +25,5 @@ public class RestartButton : MonoBehaviour
 
         // Reload the current scene
         SceneManager.LoadScene(currentSceneIndex);
-
-        // Alternative method using scene name:
-        // string currentSceneName = SceneManager.GetActiveScene().name;
-        // SceneManager.LoadScene(currentSceneName);
     }
 }

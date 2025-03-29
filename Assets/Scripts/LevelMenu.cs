@@ -3,20 +3,25 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Linq;
 
+/// <summary>
+/// Manages the level selection menu, including button interactivity based on player progress
+/// </summary>
 public class LevelMenu : MonoBehaviour
 {
+    // Array of level selection buttons
     public Button[] buttons;
 
     private void Awake()
     {
+        // Get the highest unlocked level from saved player preferences
         int unlockedLevel = PlayerPrefs.GetInt("UnlockedLevel", 1);
-        Debug.Log($"LevelMenu is attached to: {gameObject.name}");
-        Debug.Log($"UnlockedLevel: {unlockedLevel}");
-        Debug.Log($"Total buttons: {buttons.Length}");
-
         SetupButtons(unlockedLevel);
     }
 
+    /// <summary>
+    /// Configure level buttons based on player progress
+    /// </summary>
+    /// <param name="unlockedLevel">The highest level that should be unlocked</param>
     private void SetupButtons(int unlockedLevel)
     {
         // First disable all buttons and set up listeners
@@ -24,16 +29,12 @@ public class LevelMenu : MonoBehaviour
         {
             if (buttons[i] == null)
             {
-                Debug.LogError($"Button at index {i} is null! Check the Inspector.");
                 continue;
             }
-
             buttons[i].interactable = false;
             buttons[i].onClick.RemoveAllListeners();
-
             int levelNumber = i + 1;
             buttons[i].onClick.AddListener(() => {
-                Debug.Log($"Clicked button index {i} for Level {levelNumber}");
                 OpenLevel(levelNumber);
             });
         }
@@ -44,38 +45,43 @@ public class LevelMenu : MonoBehaviour
             if (buttons[i] != null)
             {
                 buttons[i].interactable = true;
-                Debug.Log($"Button {i} enabled for Level {i + 1}, interactable: {buttons[i].interactable}");
             }
         }
     }
 
+    /// <summary>
+    /// Resets player progress to only having the first level unlocked
+    /// </summary>
     public void ResetAllProgress()
     {
         PlayerPrefs.SetInt("UnlockedLevel", 1);
         PlayerPrefs.SetInt("ReachedIndex", 1);
         PlayerPrefs.Save();
-
         // Refresh the buttons
         SetupButtons(1);
-        Debug.Log("Game progress reset - only Level 1 is now unlocked");
     }
 
+    /// <summary>
+    /// Unlocks all 15 levels for testing purposes
+    /// </summary>
     public void ResetLevels()
     {
         PlayerPrefs.SetInt("UnlockedLevel", 15);
         PlayerPrefs.Save();
-
         // Refresh the buttons with new unlocked level
         SetupButtons(15);
-        Debug.Log("Levels reset - UnlockedLevel is now: " + PlayerPrefs.GetInt("UnlockedLevel"));
     }
 
+    /// <summary>
+    /// Loads the specified level scene
+    /// </summary>
+    /// <param name="levelId">The level number to load</param>
     public void OpenLevel(int levelId)
     {
-        Debug.Log($"OpenLevel called with levelId: {levelId}");
         string levelName = "Level" + levelId;
-
         bool sceneExists = false;
+
+        // Verify that the requested level exists in build settings
         for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
         {
             string scenePath = SceneUtility.GetScenePathByBuildIndex(i);
@@ -89,32 +95,21 @@ public class LevelMenu : MonoBehaviour
 
         if (sceneExists)
         {
-            Debug.Log($"Loading scene: {levelName}");
             SceneManager.LoadScene(levelName);
-        }
-        else
-        {
-            Debug.LogError($"Scene '{levelName}' is not in build settings! Please add it via File -> Build Settings");
         }
     }
 
+    /// <summary>
+    /// Utility method to verify button setup and configuration for debugging
+    /// </summary>
     public void VerifyButtonSetup()
     {
-        Debug.Log("=== Button Setup Verification ===");
         for (int i = 0; i < buttons.Length; i++)
         {
             if (buttons[i] == null)
             {
-                Debug.LogError($"Button {i} is null!");
                 continue;
             }
-
-            Debug.Log($"Button {i}:");
-            Debug.Log($"- Should load Level {i + 1}");
-            Debug.Log($"- Name: {buttons[i].gameObject.name}");
-            Debug.Log($"- Interactable: {buttons[i].interactable}");
-            Debug.Log($"- onClick listeners: {buttons[i].onClick.GetPersistentEventCount()}");
-            Debug.Log($"- Active in hierarchy: {buttons[i].gameObject.activeInHierarchy}");
         }
     }
 }
